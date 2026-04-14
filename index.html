@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>stephen AI - Mood & Attention Monitor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #080a10;
+            --primary-gradient: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            --secondary-gradient: linear-gradient(135deg, #ff00cc 0%, #3333ff 100%);
+            --neon-green: #00e676;
+            --neon-orange: #ff9100;
+            --neon-red: #ff1744;
+            --text-main: #ffffff;
+            --panel-bg: rgba(20, 25, 40, 0.8);
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow-x: hidden; 
+        }
+
+        /* --- STYLISH SCROLLBAR --- */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+        #landing-page {
+            width: 100%; min-height: 100vh;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            background: radial-gradient(circle at center, #1a253a 0%, #080a10 100%);
+            position: absolute; top: 0; left: 0;
+            transition: transform 0.8s cubic-bezier(0.87, 0, 0.13, 1), opacity 0.5s;
+            z-index: 10;
+            padding: 40px 0;
+        }
+
+        #landing-page.hidden {
+            transform: translateY(-100%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .welcome-title {
+            font-size: 64px; font-weight: 800;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            animation: titlePulse 2s infinite;
+        }
+
+        @keyframes titlePulse {
+            0%, 100% { filter: drop-shadow(0 0 10px rgba(0,242,254,0.5)); }
+            50% { filter: drop-shadow(0 0 20px rgba(0,242,254,0.8)); }
+        }
+
+        .ai-desc-container {
+            max-width: 700px; text-align: center;
+            margin: 30px 0; padding: 20px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 15px; border: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .ai-desc-para {
+            font-size: 18px; line-height: 1.8; color: #b0b8c9; font-weight: 300;
+        }
+
+        .mood-word {
+            font-weight: 600;
+            animation: moodColorCycle 8s infinite;
+        }
+
+        @keyframes moodColorCycle {
+            0%, 100% { color: #00e676; text-shadow: 0 0 5px #00e676; } 
+            25% { color: #4facfe; text-shadow: 0 0 5px #4facfe; } 
+            50% { color: #f1c40f; text-shadow: 0 0 5px #f1c40f; } 
+            75% { color: #ff1744; text-shadow: 0 0 5px #ff1744; } 
+        }
+
+        .start-btn {
+            padding: 18px 45px; font-size: 20px; font-weight: 600;
+            color: #ffffff; background: var(--secondary-gradient);
+            border: none; border-radius: 50px; cursor: pointer;
+            box-shadow: 0 10px 30px rgba(51, 51, 255, 0.4);
+            transition: 0.3s;
+        }
+
+        .start-btn:hover { transform: translateY(-3px) scale(1.02); }
+
+        .theory-btn {
+            padding: 18px 45px; font-size: 20px; font-weight: 600;
+            background: transparent; border: 2px solid #4facfe;
+            color: #4facfe; border-radius: 50px; cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .theory-btn:hover { background: #4facfe; color: white; box-shadow: 0 0 20px rgba(79, 172, 254, 0.4); }
+
+        /* --- HEALING SECTION --- */
+        .theory-section {
+            width: 90%; max-width: 1100px;
+            margin: 50px auto; display: none;
+            animation: fadeIn 1s ease-in;
+        }
+
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px; margin-top: 30px;
+        }
+
+        .video-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px; padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .video-card iframe { width: 100%; border-radius: 15px; aspect-ratio: 16/9; border: none; }
+
+        .quote-text { margin-top: 15px; font-style: italic; color: var(--neon-green); font-size: 14px; }
+
+        /* --- DASHBOARD --- */
+        #dashboard-page {
+            width: 100%; height: 100vh;
+            display: flex; background-color: var(--bg-dark);
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.5s 0.3s;
+        }
+
+        #dashboard-page.visible { opacity: 1; pointer-events: auto; }
+
+        .metrics-panel {
+            width: 340px; background-color: #10141e;
+            border-right: 1px solid #252a3a; padding: 40px 30px;
+            display: flex; flex-direction: column; gap: 20px;
+        }
+
+        .home-btn {
+            margin-bottom: 20px;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+        .home-btn:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.05); }
+
+        .system-title { font-size: 22px; font-weight: 800; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px; }
+
+        .metric-card {
+            background: var(--panel-bg); border: 1px solid #252a3a;
+            border-radius: 20px; padding: 25px; display: flex; flex-direction: column; gap: 12px;
+        }
+
+        .metric-card.active-green { border-color: var(--neon-green); }
+        .metric-card.active-orange { border-color: var(--neon-orange); }
+        .metric-card.active-red { border-color: var(--neon-red); }
+
+        .metric-card .label { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #8b949e; }
+        .metric-card .value { font-size: 28px; font-weight: 700; color: #ffffff; }
+
+        .main-view { flex: 1; padding: 50px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+        .video-wrapper {
+            width: 100%; max-width: 850px; aspect-ratio: 16 / 9;
+            background: #000; border: 4px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px; overflow: hidden; position: relative;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        #video-feed { width: 100%; height: 100%; object-fit: cover; }
+
+        .camera-off-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, #1a1f2e 0%, #080a10 100%);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            z-index: 5;
+        }
+
+        .camera-icon-modern { width: 80px; height: 80px; background: var(--primary-gradient); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; }
+
+        .offline-text { font-size: 16px; letter-spacing: 3px; color: #4facfe; font-weight: 600; text-transform: uppercase; }
+
+        .controls-container { margin-top: 30px; display: flex; gap: 20px; }
+
+        .control-btn { padding: 12px 30px; font-size: 16px; font-weight: 600; border: none; border-radius: 30px; cursor: pointer; transition: 0.3s; }
+        .btn-on { background: rgba(0, 230, 118, 0.1); color: var(--neon-green); border: 1px solid var(--neon-green); }
+        .btn-off { background: rgba(255, 23, 68, 0.1); color: var(--neon-red); border: 1px solid var(--neon-red); }
+        .btn-disabled { opacity: 0.5; pointer-events: none; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div id="landing-page">
+        <div class="welcome-title">AI MINDSET DETECTOR</div>
+        
+        <div class="ai-desc-container">
+            <p class="ai-desc-para">
+                Welcome to the next generation of human-computer interaction. Our advanced AI system continuously monitors real-time <span class="mood-word">mood swings</span>, estimated heart rate (BPM), and attention levels. Using deep learning, it understands whether you are <span class="mood-word">happy</span>, <span class="mood-word">neutral</span>, <span class="mood-word">sad</span>, or <span class="mood-word">angry</span>.
+            </p>
+        </div>
+
+        <div style="display: flex; gap: 20px; z-index: 15;">
+            <button class="start-btn" onclick="startSystem()">INITIALIZE SYSTEM</button>
+            <button class="theory-btn" onclick="showTheory()">YOUR OWN THEORY</button>
+        </div>
+
+        <div id="theory-container" class="theory-section">
+            <h2 style="text-align: center; color: var(--text-main);">Mind & Soul Healing</h2>
+            <div class="video-grid">
+                <div class="video-card"><iframe src="https://www.youtube.com/embed/xg0xljedoZs"></iframe><p class="quote-text">"Healing is not an overnight journey."</p></div>
+                <div class="video-card"><iframe src="https://www.youtube.com/embed/JkXAK6X6okw"></iframe><p class="quote-text">"Your calm mind is the ultimate weapon."</p></div>
+                <div class="video-card"><iframe src="https://www.youtube.com/embed/z6X5oEIg6Ak"></iframe><p class="quote-text">"Peace comes from within."</p></div>
+                <div class="video-card"><iframe src="https://www.youtube.com/embed/wNExOB6kx5g"></iframe><p class="quote-text">"Every breath is a second chance."</p></div>
+                <div class="video-card"><iframe src="https://www.youtube.com/embed/mnOfd5DpVWk"></iframe><p class="quote-text">"Healing takes courage."</p></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="dashboard-page">
+        <div class="metrics-panel">
+            <button class="home-btn" onclick="goHome()">🏠 Back to Home</button>
+
+            <div class="system-title">AI MONITOR</div>
+            
+            <div id="mood-card" class="metric-card active-green">
+                <span class="label">CURRENT MOOD 🎭</span>
+                <span id="emotion" class="value">...</span>
+            </div>
+            
+            <div id="bpm-card" class="metric-card active-green">
+                <span class="label">HEART RATE ❤️</span>
+                <span id="bpm" class="value">-- BPM</span>
+            </div>
+            
+            <div id="attn-card" class="metric-card active-green">
+                <span class="label">ATTENTION 👀</span>
+                <span id="attention" class="value">--</span>
+            </div>
+        </div>
+
+        <div class="main-view">
+            <div class="video-wrapper">
+                <img id="video-feed" src="">
+                <div id="camera-overlay" class="camera-off-overlay">
+                    <div class="camera-icon-modern">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="white"><path d="M12 15.5c1.93 0 3.5-1.57 3.5-3.5s-1.57-3.5-3.5-3.5-3.5 1.57-3.5 3.5 1.57 3.5 3.5 3.5z"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+                    </div>
+                    <div class="offline-text">System Standby</div>
+                </div>
+            </div>
+            <div class="controls-container">
+                <button id="cam-on-btn" class="control-btn btn-on" onclick="toggleCamera(true)">▶️ Camera ON</button>
+                <button id="cam-off-btn" class="control-btn btn-off btn-disabled" onclick="toggleCamera(false)">⏹️ Camera OFF</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function speak(text) {
+            if (!window.speechSynthesis || window.speechSynthesis.speaking) return;
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 0.9;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        let lastVoiceTime = 0, dataInterval = null, isCameraOn = false;
+        const landingPage = document.getElementById('landing-page'), dashboardPage = document.getElementById('dashboard-page'),
+              videoFeed = document.getElementById('video-feed'), cameraOverlay = document.getElementById('camera-overlay'),
+              camOnBtn = document.getElementById('cam-on-btn'), camOffBtn = document.getElementById('cam-off-btn');
+
+        function showTheory() {
+            const container = document.getElementById('theory-container');
+            container.style.display = (container.style.display === "block") ? "none" : "block";
+            if(container.style.display === "block") {
+                container.scrollIntoView({ behavior: 'smooth' });
+                speak("Opening your personal healing gallery.");
+            }
+        }
+
+        function startSystem() {
+            speak("System initializing. Welcome Stephen");
+            landingPage.classList.add('hidden');
+            dashboardPage.classList.add('visible');
+            setTimeout(() => toggleCamera(true), 800);
+        }
+
+        async function toggleCamera(turnOn) {
+            isCameraOn = turnOn;
+            const action = turnOn ? 'on' : 'off';
+            try {
+                const response = await fetch(`/control_camera?action=${action}`);
+                const data = await response.json();
+
+                if (turnOn && data.status === "on") {
+                    videoFeed.src = "{{ url_for('video_feed') }}?t=" + new Date().getTime();
+                    cameraOverlay.style.display = "none";
+                    camOnBtn.classList.add('btn-disabled');
+                    camOffBtn.classList.remove('btn-disabled');
+                    if(!dataInterval) dataInterval = setInterval(updateStats, 1000);
+                    speak("Camera feed online.");
+                } else {
+                    videoFeed.src = "";
+                    cameraOverlay.style.display = "flex";
+                    camOnBtn.classList.remove('btn-disabled');
+                    camOffBtn.classList.add('btn-disabled');
+                    if(dataInterval) { clearInterval(dataInterval); dataInterval = null; }
+                    resetDashboardData();
+                    speak("Camera feed offline.");
+                }
+            } catch (e) { console.error("Camera Toggle Error:", e); }
+        }
+
+        function goHome() {
+            toggleCamera(false);
+            dashboardPage.classList.remove('visible');
+            landingPage.classList.remove('hidden');
+            document.getElementById('theory-container').style.display = "none";
+            speak("Returning to main menu.");
+        }
+
+        function resetDashboardData() {
+            document.getElementById('emotion').innerText = "OFF";
+            document.getElementById('bpm').innerText = "--";
+            document.getElementById('attention').innerText = "--";
+        }
+
+        async function updateStats() {
+            if(!isCameraOn) return;
+            try {
+                const response = await fetch('/get_data');
+                const data = await response.json();
+                document.getElementById('emotion').innerText = data.emotion || "OFF";
+                document.getElementById('bpm').innerText = data.bpm ? data.bpm + " BPM" : "--";
+                document.getElementById('attention').innerText = data.attention || "--";
+            } catch (e) {}
+        }
+    </script>
+</body>
+</html>
